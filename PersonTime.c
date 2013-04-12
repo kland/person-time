@@ -3,7 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "util.h"
+#include "Util.h"
 
 typedef struct {
 	double tsup; /*supremum of the interval (minimum equals supremum for the previous interval or zero)*/

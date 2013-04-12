@@ -3,7 +3,7 @@
 
 #CONFIGURATION
 
-progname = $(shell basename $(CURDIR))
+progname = PersonTime
 CFLAGS = -Wall
 LDFLAGS = 
 LDLIBS = -lm
