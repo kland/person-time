@@ -14,7 +14,7 @@ typedef struct {
 static Interval *intervals; /*person-time in interval order*/
 static int numIntervals; /*number of intervals*/
 
-void PersonTime_Init(double endpoints[], int n)
+void PersonTime_Init(double partition[], int n)
 {
 	int i;
 	
@@ -22,7 +22,7 @@ void PersonTime_Init(double endpoints[], int n)
 	NEW_N(intervals, n);
 	numIntervals = n;
 	for (i = 0; i < n; i++) {
-		intervals[i].tsup = endpoints[i];
+		intervals[i].tsup = partition[i];
 		intervals[i].personTime = 0.0;
 	}
 }
