@@ -11,11 +11,21 @@ typedef struct {
 	double personTime; /*total person-time spent in this interval*/
 } Interval;
 
-static Interval intervals[] = { /*person-time in interval order*/
-	{60.0, 0.0},
-	{65.0, 0.0},
-	{70.0, 0.0},
-	{DBL_MAX, 0.0}};
+static Interval *intervals; /*person-time in interval order*/
+static int numIntervals; /*number of intervals*/
+
+void PersonTime_Init(double endpoints[], int n)
+{
+	int i;
+	
+	assert(n > 0);
+	NEW_N(intervals, n);
+	numIntervals = n;
+	for (i = 0; i < n; i++) {
+		intervals[i].tsup = endpoints[i];
+		intervals[i].personTime = 0.0;
+	}
+}
 
 
 static int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/inside/to the right of interval i*/
@@ -33,16 +43,16 @@ static int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/in
 }
 
 
-static int IntervalIndex(double t) /*returns the interval i (0 <= i < LEN(intervals)) that t is in*/
+static int IntervalIndex(double t) /*returns the interval i (0 <= i < numIntervals) that t is in*/
 {
 	int low, mid, high, sign;
 
 	assert(t >= 0);
-	assert(t < intervals[LEN(intervals) - 1].tsup);
+	assert(t < intervals[numIntervals - 1].tsup);
 
 	/*binary search for interval containing t*/
 	low = 0;
-	high = LEN(intervals) - 1;
+	high = numIntervals - 1;
 	while (low <= high) {
 		mid = (low + high) / 2;
 		sign = IntervalCmp(t, mid);
@@ -56,7 +66,7 @@ static int IntervalIndex(double t) /*returns the interval i (0 <= i < LEN(interv
 	}
 	
 	assert(mid >= 0);
-	assert(mid < LEN(intervals));
+	assert(mid < numIntervals);
 	assert(IntervalCmp(t, mid) == 0);
 	
 	return mid;
@@ -69,7 +79,7 @@ void PersonTime_Add(double t1, double t2)
 	
 	assert(t1 >= 0);
 	assert(t1 < t2);
-	assert(t2 < intervals[LEN(intervals) - 1].tsup);
+	assert(t2 < intervals[numIntervals - 1].tsup);
 	
 	fromInterval = IntervalIndex(t1); 
 	toInterval = IntervalIndex(t2);
@@ -95,7 +105,7 @@ void PersonTime_Print(void)
 	int i;
 
 	puts("Time interval  Person-time");
-	for (i = 0; i < LEN(intervals); i++) {
+	for (i = 0; i < numIntervals; i++) {
 		if (i > 0) {
 			printf("%5.1f -", intervals[i - 1].tsup);		
 		} else {

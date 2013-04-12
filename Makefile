@@ -6,7 +6,7 @@
 progname = Test
 CFLAGS = -Wall
 LDFLAGS = 
-LDLIBS = -lm
+LDLIBS = -lgc -lm
 
 
 #TEMPLATE
