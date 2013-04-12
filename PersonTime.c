@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "PersonTime.h"
 #include "Util.h"
 
 typedef struct {
@@ -10,14 +11,14 @@ typedef struct {
 	double personTime; /*total person-time spent in this interval*/
 } Interval;
 
-Interval intervals[] = { /*person-time in interval order*/
+static Interval intervals[] = { /*person-time in interval order*/
 	{60.0, 0.0},
 	{65.0, 0.0},
 	{70.0, 0.0},
 	{DBL_MAX, 0.0}};
 
 
-int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/inside/to the right of interval i*/
+static int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/inside/to the right of interval i*/
 {
 	int result;
 	
@@ -32,7 +33,7 @@ int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/inside/to
 }
 
 
-int IntervalIndex(double t) /*returns the interval i (0 <= i < LEN(intervals)) that t is in*/
+static int IntervalIndex(double t) /*returns the interval i (0 <= i < LEN(intervals)) that t is in*/
 {
 	int low, mid, high, sign;
 
@@ -62,7 +63,7 @@ int IntervalIndex(double t) /*returns the interval i (0 <= i < LEN(intervals)) t
 }
 
 
-void AddPersonTime(double t1, double t2) /*adds time segment [t1, t2] to intervals*/
+void PersonTime_Add(double t1, double t2)
 {
 	int fromInterval, toInterval, i;
 	
@@ -89,7 +90,7 @@ void AddPersonTime(double t1, double t2) /*adds time segment [t1, t2] to interva
 }
 
 
-void PrintPersonTime(void) /*prints array intervals*/
+void PersonTime_Print(void)
 {
 	int i;
 
@@ -107,17 +108,4 @@ void PrintPersonTime(void) /*prints array intervals*/
 		}
 		printf("   %.2f\n", intervals[i].personTime);
 	}
-}
-
-
-int main(void)
-{
-	int i;
-	double segments[2][2] = {{65.1, 65.7}, {58.7, 62.1}};
-	
-	for (i = 0; i < LEN(segments); i++) {
-		AddPersonTime(segments[i][0], segments[i][1]);
-	}
-	PrintPersonTime();
-	return 0;
 }
