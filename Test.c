@@ -5,7 +5,7 @@
 int main(void)
 {
 	int i;
-	double partition[] = {60, 65, 70, DBL_MAX};
+	double partition[] = {0, 60, 65, 70, DBL_MAX};
 	double segments[][2] = {{65.1, 65.7}, {58.7, 62.1}};
 	
 	PersonTime_Init(partition, LEN(partition));

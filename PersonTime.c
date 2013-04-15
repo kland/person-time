@@ -6,23 +6,25 @@
 #include "PersonTime.h"
 #include "Util.h"
 
-typedef struct {
-	double tsup; /*supremum of the interval (minimum equals supremum for the previous interval or zero)*/
+struct Interval { /*left-closed right-open interval*/
+	double min;
+	double max;
 	double personTime; /*total person-time spent in this interval*/
-} Interval;
+};
 
-static Interval *intervals; /*person-time in interval order*/
+static struct Interval *intervals; /*person-time in interval order*/
 static int numIntervals; /*number of intervals*/
 
 void PersonTime_Init(double partition[], int n)
 {
 	int i;
 	
-	assert(n > 0);
-	NEW_N(intervals, n);
-	numIntervals = n;
-	for (i = 0; i < n; i++) {
-		intervals[i].tsup = partition[i];
+	assert(n >= 2);
+	numIntervals = n - 1;
+	NEW_N(intervals, numIntervals);
+	for (i = 0; i < numIntervals; i++) {
+		intervals[i].min = partition[i];
+		intervals[i].max = partition[i + 1];
 		intervals[i].personTime = 0.0;
 	}
 }
@@ -32,9 +34,9 @@ static int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/in
 {
 	int result;
 	
-	if ((i > 0) && (t < intervals[i - 1].tsup)) {
+	if ((i > 0) && (t < intervals[i].min)) {
 		result = -1;
-	} else if (t >= intervals[i].tsup) {
+	} else if (t >= intervals[i].max) {
 		result = 1;
 	} else {
 		result = 0;
@@ -48,7 +50,7 @@ static int IntervalIndex(double t) /*returns the interval i (0 <= i < numInterva
 	int low, mid, high, sign;
 
 	assert(t >= 0);
-	assert(t < intervals[numIntervals - 1].tsup);
+	assert(t < intervals[numIntervals - 1].max);
 
 	/*binary search for interval containing t*/
 	low = 0;
@@ -79,23 +81,23 @@ void PersonTime_Add(double t1, double t2)
 	
 	assert(t1 >= 0);
 	assert(t1 < t2);
-	assert(t2 < intervals[numIntervals - 1].tsup);
+	assert(t2 < intervals[numIntervals - 1].max);
 	
 	fromInterval = IntervalIndex(t1); 
 	toInterval = IntervalIndex(t2);
 	
 	/*add interval fractions (from the ends of the time segment)*/
 	if (fromInterval < toInterval) {
-		intervals[fromInterval].personTime += intervals[fromInterval].tsup - t1;
+		intervals[fromInterval].personTime += intervals[fromInterval].max - t1;
 		assert(toInterval > 0);
-		intervals[toInterval].personTime += t2 - intervals[toInterval - 1].tsup;
+		intervals[toInterval].personTime += t2 - intervals[toInterval].min;
 	} else {
 		intervals[fromInterval].personTime += t2 - t1;
 	}
 
 	/*add whole intervals*/
 	for (i = fromInterval + 1; i < toInterval; i++) {
-		intervals[i].personTime += intervals[i].tsup - intervals[i - 1].tsup;
+		intervals[i].personTime += intervals[i].max - intervals[i].min;
 	}	
 }
 
@@ -107,12 +109,12 @@ void PersonTime_Print(void)
 	puts("Time interval  Person-time");
 	for (i = 0; i < numIntervals; i++) {
 		if (i > 0) {
-			printf("%5.1f -", intervals[i - 1].tsup);		
+			printf("%5.1f -", intervals[i].min);		
 		} else {
 			printf("  0.0 -");
 		}
-		if (intervals[i].tsup < DBL_MAX) {
-			printf("%5.1f", intervals[i].tsup);
+		if (intervals[i].max < DBL_MAX) {
+			printf("%5.1f", intervals[i].max);
 		} else {
 			printf("     ");
 		}
