@@ -23,6 +23,7 @@ void PersonTime_Init(double partition[], int n)
 	numIntervals = n - 1;
 	NEW_N(intervals, numIntervals);
 	for (i = 0; i < numIntervals; i++) {
+		assert(partition[i] < partition[i + 1]);
 		intervals[i].min = partition[i];
 		intervals[i].max = partition[i + 1];
 		intervals[i].personTime = 0.0;
