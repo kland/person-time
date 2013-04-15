@@ -30,13 +30,17 @@ void PersonTime_Init(double partition[], int n)
 }
 
 
-static int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/inside/to the right of interval i*/
+static int Comparison(const void *key, const void *elem) /*returns -1/0/1 iff time `key' is to the left/inside/to the right of interval `elem'*/
 {
+	double t;
+	struct Interval *interval;
 	int result;
 	
-	if ((i > 0) && (t < intervals[i].min)) {
+	t = *((double *) key);
+	interval = (struct Interval *) elem;
+	if (t < interval->min) {
 		result = -1;
-	} else if (t >= intervals[i].max) {
+	} else if (interval->max < t) {
 		result = 1;
 	} else {
 		result = 0;
@@ -47,31 +51,18 @@ static int IntervalCmp(double t, int i) /*returns -1/0/1 iff t is to the left/in
 
 static int IntervalIndex(double t) /*returns the interval i (0 <= i < numIntervals) that t is in*/
 {
-	int low, mid, high, sign;
+	struct Interval *interval;
+	int result;
 
 	assert(t >= 0);
 	assert(t < intervals[numIntervals - 1].max);
 
-	/*binary search for interval containing t*/
-	low = 0;
-	high = numIntervals - 1;
-	while (low <= high) {
-		mid = (low + high) / 2;
-		sign = IntervalCmp(t, mid);
-		if (sign == 0) {
-			high = low - 1; /*exit the loop*/
-		} else if (sign < 0) {
-			high = mid - 1;
-		} else {
-			low = mid + 1;
-		}
-	}
+	interval = bsearch(&t, intervals, numIntervals, sizeof *intervals, Comparison);
+	result = interval - intervals;
 	
-	assert(mid >= 0);
-	assert(mid < numIntervals);
-	assert(IntervalCmp(t, mid) == 0);
-	
-	return mid;
+	assert(result >= 0);
+	assert(result < numIntervals);
+	return result;
 }
 
 
