@@ -82,7 +82,7 @@ static int TauComparison(const void *key, const void *elem) /*returns -1/0/1 iff
 }
 
 
-static int InsideGrid(double s, double t) /*returns non-zero iff point (s1, t1) lies inside the grid*/
+static int InsideGrid(double s, double t) /*returns non-zero iff point (s, t) lies inside the grid*/
 {
 	return (grid[0][0].sigmaMin <= s)
 		&& (s < grid[sigmaIntervalCount - 1][0].sigmaMax)
