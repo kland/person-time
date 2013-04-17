@@ -4,9 +4,9 @@
 
 int main(void)
 {
-	double sigma[] = {0.0, 60.0, 65.0, 70.0, 100}; /*partition of first time axis*/
-	double tau[] = {40.0, 60.0, 100.0}; /*partition of second time axis*/
-	double segments[][3] = {{65.1, 65.7, 5.0}, {58.7, 62.1, 5.0}}; /*time segments (s, t, dt)*/
+	double sigma[] = {0.0, 10.0, 20.0}; /*partition of first time axis*/
+	double tau[] = {0.0, 10.0, 20.0}; /*partition of second time axis*/
+	double segments[][3] = {{5.0, 5.0, 10.0}}; /*time segments (s, t, dt)*/
 	int i;
 	
 	PersonTime_Init(sigma, LEN(sigma), tau, LEN(tau));
