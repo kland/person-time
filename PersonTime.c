@@ -111,31 +111,9 @@ static void GetRectangle(double s1, double t1, int *i1, int *j1) /*sets (*i1, *j
 }
 
 
-static double Min(double x, double y)
-{
-	return (x < y)? x: y;
-}
-
-
-static double Max(double x, double y)
-{
-	return (x > y)? x: y;
-}
-
-
 static void AddToRectangle(struct Rectangle *r, double s1, double t1, double s2, double t2) /*adds person-time spent in rectangle r for time segment with endpoints (s1, t1) and (s2, t2)*/
 {
-	double sigma1, tau1, sigma2, tau2; /*clip coordinates*/
-	
-	sigma1 = Max(s1, r->sigmaMin);
-	tau1 = Max(t1, r->tauMin);
-
-	sigma2 = Min(s2, r->sigmaMax);
-	tau2 = Min(t2, r->tauMax);
-
-	if ((sigma1 < sigma2) && (tau1 < tau2)) { /*segment crosses rectangle*/
-		r->personTime += sigma2 - sigma1;
-	}
+	/*TODO: Implement Cohen-Sutherland line clipping algorithm*/
 }
 
 
