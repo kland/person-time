@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "PersonTime.h"
 #include "Util.h"
 
@@ -163,14 +164,29 @@ void PersonTime_Add(double s1, double t1, double dt)
 
 void PersonTime_Print(void)
 {
+	const int colSep = 2;
+	const char sigmaMinLabel[] = "Sigma Min";
+	const char sigmaMaxLabel[] = "Sigma Max";
+	const char tauMinLabel[] = "Tau Min";
+	const char tauMaxLabel[] = "Tau Max";	
+	const char personTimeLabel[] = "Person Time";
 	int i, j;
 
-	puts("sigma          tau            person-time");
+	printf("%s", sigmaMinLabel);
+	printf("%*s", (int) (colSep + strlen(sigmaMaxLabel)), sigmaMaxLabel);
+	printf("%*s", (int) (colSep + strlen(tauMinLabel)), tauMinLabel);
+	printf("%*s", (int) (colSep + strlen(tauMaxLabel)), tauMaxLabel);
+	printf("%*s", (int) (colSep + strlen(personTimeLabel)), personTimeLabel);
+	putchar('\n');
+
 	for (i = 0; i < sigmaIntervalCount; i++) {
 		for (j = 0; j < tauIntervalCount; j++) {
-			printf("%5.1f - %5.1f", grid[i][j].sigmaMin, grid[i][j].sigmaMax);
-			printf("  %5.1f - %5.1f", grid[i][j].tauMin, grid[i][j].tauMax);
-			printf("  %11.1f\n", grid[i][j].personTime);
+			printf("%*.1f", (int) strlen(sigmaMinLabel), grid[i][j].sigmaMin);
+			printf("%*.1f", (int) (colSep + strlen(sigmaMaxLabel)), grid[i][j].sigmaMax);
+			printf("%*.1f", (int) (colSep + strlen(tauMinLabel)), grid[i][j].tauMin);
+			printf("%*.1f", (int) (colSep + strlen(tauMaxLabel)), grid[i][j].tauMax);
+			printf("%*.1f", (int) (colSep + strlen(personTimeLabel)), grid[i][j].personTime);
+			putchar('\n');
 		}
 	}
 }
