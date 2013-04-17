@@ -6,42 +6,54 @@
 #include "PersonTime.h"
 #include "Util.h"
 
-struct Interval { /*left-closed right-open interval*/
-	double min;
-	double max;
-	double personTime; /*total person-time spent in this interval*/
+struct Rectangle { /*lower-left-closed upper-right-open rectangle*/
+	double sigmaMin, sigmaMax;
+	double tauMin, tauMax;
+	double personTime; /*total person-time spent in this rectangle*/
 };
 
-static struct Interval *intervals; /*person-time in interval order*/
-static int numIntervals; /*number of intervals*/
+static struct Rectangle **grid; /*total person-time for each rectangle*/
+static int sigmaIntervalCount; /*number of intervals on the sigma axis in the grid*/
+static int tauIntervalCount; /*number of intervals on the tau axis in the grid*/
 
-void PersonTime_Init(double partition[], int n)
+void PersonTime_Init(double sigma[], int m, double tau[], int n)
 {
-	int i;
+	int i, j;
 	
+	assert(m >= 2);
 	assert(n >= 2);
-	numIntervals = n - 1;
-	NEW_N(intervals, numIntervals);
-	for (i = 0; i < numIntervals; i++) {
-		assert(partition[i] < partition[i + 1]);
-		intervals[i].min = partition[i];
-		intervals[i].max = partition[i + 1];
-		intervals[i].personTime = 0.0;
+	
+	sigmaIntervalCount = m - 1;
+	tauIntervalCount = n - 1;
+	NEW_N(grid, sigmaIntervalCount);
+	for (i = 0; i < sigmaIntervalCount; i++) {
+		NEW_N(grid[i], tauIntervalCount);
+		for (j = 0; j < tauIntervalCount; j++) {
+			assert(sigma[i] < sigma[i + 1]);
+			grid[i][j].sigmaMin = sigma[i];
+			grid[i][j].sigmaMax = sigma[i + 1];
+
+			assert(tau[j] < tau[j + 1]);
+			grid[i][j].tauMin = tau[j];
+			grid[i][j].tauMax = tau[j + 1];
+
+			grid[i][j].personTime = 0.0;
+		}
 	}
 }
 
 
-static int Comparison(const void *key, const void *elem) /*returns -1/0/1 iff time `key' is to the left/inside/to the right of interval `elem'*/
+static int SigmaComparison(const void *key, const void *elem) /*returns -1/0/1 iff time `key' is less than/inside/greater than sigma interval in `elem'*/
 {
-	double t;
-	struct Interval *interval;
+	double s;
+	struct Rectangle **sigmaInterval;
 	int result;
 	
-	t = *((double *) key);
-	interval = (struct Interval *) elem;
-	if (t < interval->min) {
+	s = *((double *) key);
+	sigmaInterval = (struct Rectangle **) elem;
+	if (s < (*sigmaInterval)->sigmaMin) {
 		result = -1;
-	} else if (interval->max < t) {
+	} else if ((*sigmaInterval)->sigmaMax < s) {
 		result = 1;
 	} else {
 		result = 0;
@@ -50,66 +62,115 @@ static int Comparison(const void *key, const void *elem) /*returns -1/0/1 iff ti
 }
 
 
-static int IntervalIndex(double t) /*returns the interval i (0 <= i < numIntervals) that t is in*/
+static int TauComparison(const void *key, const void *elem) /*returns -1/0/1 iff time `key' is less than/inside/greater than tau interval in `elem'*/
 {
-	struct Interval *interval;
+	double t;
+	struct Rectangle *tauInterval;
 	int result;
-
-	assert(t >= 0);
-	assert(t < intervals[numIntervals - 1].max);
-
-	interval = bsearch(&t, intervals, numIntervals, sizeof *intervals, Comparison);
-	result = interval - intervals;
 	
-	assert(result >= 0);
-	assert(result < numIntervals);
+	t = *((double *) key);
+	tauInterval = (struct Rectangle *) elem;
+	if (t < tauInterval->tauMin) {
+		result = -1;
+	} else if (tauInterval->tauMax < t) {
+		result = 1;
+	} else {
+		result = 0;
+	}
 	return result;
 }
 
 
-void PersonTime_Add(double t1, double t2)
+static int InsideGrid(double s, double t) /*returns non-zero iff point (s1, t1) lies inside the grid*/
 {
-	int fromInterval, toInterval, i;
-	
-	assert(t1 >= 0);
-	assert(t1 < t2);
-	assert(t2 < intervals[numIntervals - 1].max);
-	
-	fromInterval = IntervalIndex(t1); 
-	toInterval = IntervalIndex(t2);
-	
-	/*add interval fractions (from the ends of the time segment)*/
-	if (fromInterval < toInterval) {
-		intervals[fromInterval].personTime += intervals[fromInterval].max - t1;
-		assert(toInterval > 0);
-		intervals[toInterval].personTime += t2 - intervals[toInterval].min;
-	} else {
-		intervals[fromInterval].personTime += t2 - t1;
-	}
+	return (grid[0][0].sigmaMin <= s)
+		&& (s < grid[sigmaIntervalCount - 1][0].sigmaMax)
+		&& (grid[0][0].tauMin <= t)
+		&& (t < grid[0][tauIntervalCount - 1].tauMax);
+}
 
-	/*add whole intervals*/
-	for (i = fromInterval + 1; i < toInterval; i++) {
-		intervals[i].personTime += intervals[i].max - intervals[i].min;
+
+static void GetRectangle(double s1, double t1, int *i1, int *j1) /*sets (*i1, *j1) to the grid rectangle containing point (s1, t1)*/
+{
+	struct Rectangle **sigmaInterval;
+	struct Rectangle *tauInterval;
+
+	assert(InsideGrid(s1, t1));
+
+	sigmaInterval = bsearch(&s1, grid, sigmaIntervalCount, sizeof *grid, SigmaComparison);
+	*i1 = sigmaInterval - grid;
+	
+	tauInterval = bsearch(&t1, grid[0], tauIntervalCount, sizeof *(grid[0]), TauComparison);
+	*j1 = tauInterval - grid[0];
+	
+	assert(*i1 >= 0);
+	assert(*i1 < sigmaIntervalCount);
+	assert(*j1 >= 0);
+	assert(*j1 < tauIntervalCount);
+}
+
+
+static double Min(double x, double y)
+{
+	return (x < y)? x: y;
+}
+
+
+static double Max(double x, double y)
+{
+	return (x > y)? x: y;
+}
+
+
+static void AddToRectangle(struct Rectangle *r, double s1, double t1, double s2, double t2) /*adds person-time spent in rectangle r for time segment with endpoints (s1, t1) and (s2, t2)*/
+{
+	double sigma1, tau1, sigma2, tau2; /*clip coordinates*/
+	
+	sigma1 = Max(s1, r->sigmaMin);
+	tau1 = Max(t1, r->tauMin);
+
+	sigma2 = Min(s2, r->sigmaMax);
+	tau2 = Min(t2, r->tauMax);
+
+	if ((sigma1 < sigma2) && (tau1 < tau2)) { /*segment crosses rectangle*/
+		r->personTime += sigma2 - sigma1;
+	}
+}
+
+
+void PersonTime_Add(double s1, double t1, double dt)
+{
+	double s2, t2; /*endpoint*/
+	int i1, j1; /*grid rectangle containing point (s1, t1)*/
+	int i2, j2; /*grid rectangle containing point (s2, t2)*/
+	int i, j;
+	
+	s2 = s1 + dt;
+	t2 = t1 + dt;
+	assert(InsideGrid(s1, t1));
+	assert(InsideGrid(s2, t2));
+	
+	GetRectangle(s1, t1, &i1, &j1);
+	GetRectangle(s2, t2, &i2, &j2);
+	
+	for (i = i1; i <= i2; i++) {
+		for (j = j1; j <= j2; j++) {
+			AddToRectangle(&(grid[i][j]), s1, t1, s2, t2);
+		}
 	}	
 }
 
 
 void PersonTime_Print(void)
 {
-	int i;
+	int i, j;
 
-	puts("Time interval  Person-time");
-	for (i = 0; i < numIntervals; i++) {
-		if (i > 0) {
-			printf("%5.1f -", intervals[i].min);		
-		} else {
-			printf("  0.0 -");
+	puts("sigma          tau            person-time");
+	for (i = 0; i < sigmaIntervalCount; i++) {
+		for (j = 0; j < tauIntervalCount; j++) {
+			printf("%5.1f - %5.1f", grid[i][j].sigmaMin, grid[i][j].sigmaMax);
+			printf("  %5.1f - %5.1f", grid[i][j].tauMin, grid[i][j].tauMax);
+			printf("  %11.1f\n", grid[i][j].personTime);
 		}
-		if (intervals[i].max < DBL_MAX) {
-			printf("%5.1f", intervals[i].max);
-		} else {
-			printf("     ");
-		}
-		printf("   %.2f\n", intervals[i].personTime);
 	}
 }
