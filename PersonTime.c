@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "LineClipping.h"
 #include "PersonTime.h"
 #include "Util.h"
 
@@ -113,7 +114,24 @@ static void GetRectangle(double s1, double t1, int *i1, int *j1) /*sets (*i1, *j
 
 static void AddToRectangle(struct Rectangle *r, double s1, double t1, double s2, double t2) /*adds person-time spent in rectangle r for time segment with endpoints (s1, t1) and (s2, t2)*/
 {
-	/*TODO: Implement Cohen-Sutherland line clipping algorithm*/
+	struct LineClipping_Segment segment, result;
+	struct LineClipping_Rectangle rectangle;
+	int done;
+	
+	segment.x0 = s1;
+	segment.y0 = t1;
+	segment.x1 = s2;
+	segment.y1 = t2;
+	
+	rectangle.xMin = r->sigmaMin;
+	rectangle.yMin = r->tauMin;
+	rectangle.xMax = r->sigmaMax;
+	rectangle.yMax = r->tauMax;
+	
+	LineClipping_Clip(&segment, &rectangle, &result, &done);
+	if (done) {
+		r->personTime = result.x1 - result.x0; /*x1 - x0 equals y1 - y0*/
+	}
 }
 
 
