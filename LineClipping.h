@@ -9,8 +9,8 @@ struct LineClipping_Rectangle {
 	double xMin, xMax, yMin, yMax;
 };
 
-void LineClipping_Clip(const struct LineClipping_Segment *s, 
-	const struct LineClipping_Rectangle *r, 
-	struct LineClipping_Segment *out, int *done); /*sets `out' to s clipped to r. Status flag `done' is set to non-zero iff s crosses r.*/
+void LineClipping_Clip(const struct LineClipping_Rectangle *r,
+	struct LineClipping_Segment *s,
+	int *done); /*clips s to r. Status flag `done' is set to non-zero iff s crosses r.*/
 
 #endif

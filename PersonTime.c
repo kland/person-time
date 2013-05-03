@@ -114,7 +114,7 @@ static void GetRectangle(double s1, double t1, int *i1, int *j1) /*sets (*i1, *j
 
 static void AddToRectangle(struct Rectangle *r, double s1, double t1, double s2, double t2) /*adds person-time spent in rectangle r for time segment with endpoints (s1, t1) and (s2, t2)*/
 {
-	struct LineClipping_Segment segment, result;
+	struct LineClipping_Segment segment;
 	struct LineClipping_Rectangle rectangle;
 	int done;
 	
@@ -128,9 +128,9 @@ static void AddToRectangle(struct Rectangle *r, double s1, double t1, double s2,
 	rectangle.xMax = r->sigmaMax;
 	rectangle.yMax = r->tauMax;
 	
-	LineClipping_Clip(&segment, &rectangle, &result, &done);
+	LineClipping_Clip(&rectangle, &segment, &done);
 	if (done) {
-		r->personTime = result.x1 - result.x0; /*x1 - x0 equals y1 - y0*/
+		r->personTime = segment.x1 - segment.x0; /*x1 - x0 equals y1 - y0*/
 	}
 }
 
