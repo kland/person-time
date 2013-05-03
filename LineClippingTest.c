@@ -62,10 +62,12 @@ int main(void)
 		test = tests[i];
 		LineClipping_Clip(&(test.rectangle), &(test.segment), &done);
 		assert(done == test.expectedDone);
-		assert(test.segment.x0 == test.expectedSegment.x0);
-		assert(test.segment.y0 == test.expectedSegment.y0);
-		assert(test.segment.x1 == test.expectedSegment.x1);
-		assert(test.segment.y1 == test.expectedSegment.y1);
+		if (done) {
+			assert(test.segment.x0 == test.expectedSegment.x0);
+			assert(test.segment.y0 == test.expectedSegment.y0);
+			assert(test.segment.x1 == test.expectedSegment.x1);
+			assert(test.segment.y1 == test.expectedSegment.y1);
+		}
 	}	
 	return 0;
 }
