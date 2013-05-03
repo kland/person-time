@@ -18,7 +18,7 @@ static struct Rectangle **grid; /*total person-time for each rectangle*/
 static int sigmaIntervalCount; /*number of intervals on the sigma axis in the grid*/
 static int tauIntervalCount; /*number of intervals on the tau axis in the grid*/
 
-void PersonTime_Init(double sigma[], int m, double tau[], int n)
+void PersonTime_Init(const double sigma[], int m, const double tau[], int n)
 {
 	int i, j;
 	
@@ -112,21 +112,21 @@ static void GetRectangle(double s1, double t1, int *i1, int *j1) /*sets (*i1, *j
 }
 
 
-static void AddToRectangle(struct Rectangle *r, double s1, double t1, double s2, double t2) /*adds person-time spent in rectangle r for time segment with endpoints (s1, t1) and (s2, t2)*/
+static void AddToRectangle(double s1, double t1, double s2, double t2, struct Rectangle *r) /*adds person-time spent in rectangle r for time segment with endpoints (s1, t1) and (s2, t2)*/
 {
-	struct LineClipping_Segment segment;
 	struct LineClipping_Rectangle rectangle;
+	struct LineClipping_Segment segment;
 	int done;
-	
-	segment.x0 = s1;
-	segment.y0 = t1;
-	segment.x1 = s2;
-	segment.y1 = t2;
-	
+		
 	rectangle.xMin = r->sigmaMin;
 	rectangle.yMin = r->tauMin;
 	rectangle.xMax = r->sigmaMax;
 	rectangle.yMax = r->tauMax;
+
+	segment.x0 = s1;
+	segment.y0 = t1;
+	segment.x1 = s2;
+	segment.y1 = t2;
 	
 	LineClipping_Clip(&rectangle, &segment, &done);
 	if (done) {
@@ -152,7 +152,7 @@ void PersonTime_Add(double s1, double t1, double dt)
 	
 	for (i = i1; i <= i2; i++) {
 		for (j = j1; j <= j2; j++) {
-			AddToRectangle(&(grid[i][j]), s1, t1, s2, t2);
+			AddToRectangle(s1, t1, s2, t2, &(grid[i][j]));
 		}
 	}	
 }
