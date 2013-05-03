@@ -56,7 +56,7 @@ static void GetIntersection(const struct LineClipping_Rectangle *r,
 	const struct LineClipping_Segment *s,
 	int outcode,
 	double *x,
-	double *y)
+	double *y) /*sets (x, y) to the intersection point of s and an edge of r contained in `outcode'*/
 {
 	if (In(TOP, outcode)) {
 		*x = s->x0 + (s->x1 - s->x0) * (r->yMax - s->y0) / (s->y1 - s->y0);
