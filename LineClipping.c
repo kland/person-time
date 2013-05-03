@@ -82,6 +82,7 @@ void LineClipping_Clip(const struct LineClipping_Rectangle *r,
 	struct LineClipping_Segment *s, 
 	int *done)
 {
+	const int maxIter = 4;
 	int outcode0, outcode1, i;
 	double x, y;
 	
@@ -89,7 +90,7 @@ void LineClipping_Clip(const struct LineClipping_Rectangle *r,
 	outcode0 = Outcode(s->x0, s->y0, r);
 	outcode1 = Outcode(s->x1, s->y1, r);
 	i = 0;
-	while (! Inside(outcode0, outcode1) && ! SameSide(outcode0, outcode1) && (i < 4)) { /*counter i guarantees loop termination*/
+	while (! Inside(outcode0, outcode1) && ! SameSide(outcode0, outcode1) && (i < maxIter)) {
 		if (outcode0 != 0) {
 			GetIntersection(r, s, outcode0, &x, &y);
 			s->x0 = x;
@@ -103,7 +104,7 @@ void LineClipping_Clip(const struct LineClipping_Rectangle *r,
 		}
 		i++;
 	}
-	assert(i < 4);
+	assert(i < maxIter);
 	*done = Inside(outcode0, outcode1);
 }
 
