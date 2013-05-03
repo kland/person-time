@@ -12,7 +12,7 @@ LDLIBS = -lgc
 
 #TEMPLATE
 
-test_sources := $(wildcard *$(test_suffix).c)
+test_sources := $(wildcard *?$(test_suffix).c)
 test_objects := $(patsubst %.c,%.o,$(test_sources))
 test_binaries := $(patsubst %.c,%,$(test_sources))
 
