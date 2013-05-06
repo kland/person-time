@@ -130,7 +130,7 @@ static void AddToRectangle(double s1, double t1, double s2, double t2, struct Re
 	
 	LineClipping_Clip(&rectangle, &segment, &done);
 	if (done) {
-		r->personTime = segment.x1 - segment.x0; /*x1 - x0 equals y1 - y0*/
+		r->personTime += segment.x1 - segment.x0; /*x1 - x0 equals y1 - y0*/
 	}
 }
 
