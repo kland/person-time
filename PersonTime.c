@@ -14,34 +14,38 @@ struct Rectangle { /*lower-left-closed upper-right-open rectangle*/
 	double personTime; /*total person-time spent in this rectangle*/
 };
 
-static struct Rectangle **grid; /*total person-time for each rectangle*/
-static int sigmaIntervalCount; /*number of intervals on the sigma axis in the grid*/
-static int tauIntervalCount; /*number of intervals on the tau axis in the grid*/
+struct PersonTime_GridDesc {
+	struct Rectangle **rectangles;
+	int sigmaIntervalCount; /*number of intervals on the sigma axis*/
+	int tauIntervalCount; /*number of intervals on the tau axis*/
+};
 
-void PersonTime_Init(const double sigma[], int m, const double tau[], int n)
+PersonTime_Grid PersonTime_New(const double sigma[], int m, const double tau[], int n)
 {
+	PersonTime_Grid result;
 	int i, j;
 	
 	assert(m >= 2);
 	assert(n >= 2);
 	
-	sigmaIntervalCount = m - 1;
-	tauIntervalCount = n - 1;
-	NEW_N(grid, sigmaIntervalCount);
-	for (i = 0; i < sigmaIntervalCount; i++) {
-		NEW_N(grid[i], tauIntervalCount);
-		for (j = 0; j < tauIntervalCount; j++) {
+	NEW(result);
+	result->sigmaIntervalCount = m - 1;
+	result->tauIntervalCount = n - 1;
+	NEW_N(result->rectangles, result->sigmaIntervalCount);
+	for (i = 0; i < result->sigmaIntervalCount; i++) {
+		NEW_N(result->rectangles[i], result->tauIntervalCount);
+		for (j = 0; j < result->tauIntervalCount; j++) {
 			assert(sigma[i] < sigma[i + 1]);
-			grid[i][j].sigmaMin = sigma[i];
-			grid[i][j].sigmaMax = sigma[i + 1];
+			result->rectangles[i][j].sigmaMin = sigma[i];
+			result->rectangles[i][j].sigmaMax = sigma[i + 1];
 
 			assert(tau[j] < tau[j + 1]);
-			grid[i][j].tauMin = tau[j];
-			grid[i][j].tauMax = tau[j + 1];
-
-			grid[i][j].personTime = 0.0;
+			result->rectangles[i][j].tauMin = tau[j];
+			result->rectangles[i][j].tauMax = tau[j + 1];
+			result->rectangles[i][j].personTime = 0.0;
 		}
 	}
+	return result;
 }
 
 
@@ -83,32 +87,32 @@ static int TauComparison(const void *key, const void *elem) /*returns -1/0/1 iff
 }
 
 
-static int InsideGrid(double s, double t) /*returns non-zero iff point (s, t) lies inside the grid*/
+static int InsideGrid(double s, double t, PersonTime_Grid grid) /*returns non-zero iff point (s, t) lies inside the grid*/
 {
-	return (grid[0][0].sigmaMin <= s)
-		&& (s < grid[sigmaIntervalCount - 1][0].sigmaMax)
-		&& (grid[0][0].tauMin <= t)
-		&& (t < grid[0][tauIntervalCount - 1].tauMax);
+	return (grid->rectangles[0][0].sigmaMin <= s)
+		&& (s < grid->rectangles[grid->sigmaIntervalCount - 1][0].sigmaMax)
+		&& (grid->rectangles[0][0].tauMin <= t)
+		&& (t < grid->rectangles[0][grid->tauIntervalCount - 1].tauMax);
 }
 
 
-static void GetRectangle(double s1, double t1, int *i1, int *j1) /*sets (*i1, *j1) to the grid rectangle containing point (s1, t1)*/
+static void GetRectangle(double s1, double t1, PersonTime_Grid grid, int *i1, int *j1) /*sets (*i1, *j1) to the grid rectangle containing point (s1, t1)*/
 {
 	struct Rectangle **sigmaInterval;
 	struct Rectangle *tauInterval;
 
-	assert(InsideGrid(s1, t1));
+	assert(InsideGrid(s1, t1, grid));
 
-	sigmaInterval = bsearch(&s1, grid, sigmaIntervalCount, sizeof *grid, SigmaComparison);
-	*i1 = sigmaInterval - grid;
+	sigmaInterval = bsearch(&s1, grid->rectangles, grid->sigmaIntervalCount, sizeof *(grid->rectangles), SigmaComparison);
+	*i1 = sigmaInterval - grid->rectangles;
 	
-	tauInterval = bsearch(&t1, grid[0], tauIntervalCount, sizeof *(grid[0]), TauComparison);
-	*j1 = tauInterval - grid[0];
+	tauInterval = bsearch(&t1, grid->rectangles[0], grid->tauIntervalCount, sizeof *(grid->rectangles[0]), TauComparison);
+	*j1 = tauInterval - grid->rectangles[0];
 	
 	assert(*i1 >= 0);
-	assert(*i1 < sigmaIntervalCount);
+	assert(*i1 < grid->sigmaIntervalCount);
 	assert(*j1 >= 0);
-	assert(*j1 < tauIntervalCount);
+	assert(*j1 < grid->tauIntervalCount);
 }
 
 
@@ -135,7 +139,7 @@ static void AddToRectangle(double s1, double t1, double s2, double t2, struct Re
 }
 
 
-void PersonTime_Add(double s1, double t1, double dt)
+void PersonTime_Add(double s1, double t1, double dt, PersonTime_Grid grid)
 {
 	double s2, t2; /*endpoint*/
 	int i1, j1; /*grid rectangle containing point (s1, t1)*/
@@ -144,21 +148,21 @@ void PersonTime_Add(double s1, double t1, double dt)
 	
 	s2 = s1 + dt;
 	t2 = t1 + dt;
-	assert(InsideGrid(s1, t1));
-	assert(InsideGrid(s2, t2));
+	assert(InsideGrid(s1, t1, grid));
+	assert(InsideGrid(s2, t2, grid));
 	
-	GetRectangle(s1, t1, &i1, &j1);
-	GetRectangle(s2, t2, &i2, &j2);
+	GetRectangle(s1, t1, grid, &i1, &j1);
+	GetRectangle(s2, t2, grid, &i2, &j2);
 	
 	for (i = i1; i <= i2; i++) {
 		for (j = j1; j <= j2; j++) {
-			AddToRectangle(s1, t1, s2, t2, &(grid[i][j]));
+			AddToRectangle(s1, t1, s2, t2, &(grid->rectangles[i][j]));
 		}
 	}	
 }
 
 
-void PersonTime_Print(void)
+void PersonTime_Print(PersonTime_Grid grid)
 {
 	const int colSep = 2;
 	const char sigmaMinLabel[] = "Sigma Min";
@@ -175,13 +179,13 @@ void PersonTime_Print(void)
 	printf("%*s", (int) (colSep + strlen(personTimeLabel)), personTimeLabel);
 	putchar('\n');
 
-	for (i = 0; i < sigmaIntervalCount; i++) {
-		for (j = 0; j < tauIntervalCount; j++) {
-			printf("%*.1f", (int) strlen(sigmaMinLabel), grid[i][j].sigmaMin);
-			printf("%*.1f", (int) (colSep + strlen(sigmaMaxLabel)), grid[i][j].sigmaMax);
-			printf("%*.1f", (int) (colSep + strlen(tauMinLabel)), grid[i][j].tauMin);
-			printf("%*.1f", (int) (colSep + strlen(tauMaxLabel)), grid[i][j].tauMax);
-			printf("%*.1f", (int) (colSep + strlen(personTimeLabel)), grid[i][j].personTime);
+	for (i = 0; i < grid->sigmaIntervalCount; i++) {
+		for (j = 0; j < grid->tauIntervalCount; j++) {
+			printf("%*.1f", (int) strlen(sigmaMinLabel), grid->rectangles[i][j].sigmaMin);
+			printf("%*.1f", (int) (colSep + strlen(sigmaMaxLabel)), grid->rectangles[i][j].sigmaMax);
+			printf("%*.1f", (int) (colSep + strlen(tauMinLabel)), grid->rectangles[i][j].tauMin);
+			printf("%*.1f", (int) (colSep + strlen(tauMaxLabel)), grid->rectangles[i][j].tauMax);
+			printf("%*.1f", (int) (colSep + strlen(personTimeLabel)), grid->rectangles[i][j].personTime);
 			putchar('\n');
 		}
 	}
