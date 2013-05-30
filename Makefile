@@ -32,7 +32,7 @@ depend: $(prog_sources) $(test_sources)
 
 .PHONY: test
 test: $(test_binaries)
-	$(foreach test,$^,./$(test))
+	$(foreach test,$^,./$(test);)
 
 %$(test_suffix): %$(test_suffix).o $(filter-out $(progname).o,$(prog_objects))
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
